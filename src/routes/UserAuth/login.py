@@ -1,19 +1,9 @@
-import datetime
-from fastapi import Form, Request, HTTPException
+from fastapi import Form, Request, HTTPException, APIRouter
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
-from fastapi import APIRouter, Form
-from fastapi.templating import Jinja2Templates
-from fastapi import FastAPI, File, UploadFile, Request
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
-import os
-from pathlib import Path
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
-import pandas as pd
-import json
 from google.cloud.firestore_v1 import FieldFilter
 
 router = APIRouter()
@@ -51,7 +41,17 @@ async def login(
         #     firebase_admin.delete_app(firebase_admin.get_app())
         #     return JSONResponse(content={"message": "Not Verified"}, status_code=401)
         else:
-            return JSONResponse(content={"message": "Login successful"}, status_code=200)
+            user_query = db.collection("users").where(filter=FieldFilter("reg", "==", reg.upper())).limit(1)
+            user_result = user_query.get()
+            name = ''
+            gender = ''
+            reg = ''
+            for doc in user_result:
+                # Access the 'name' field
+                name = doc.get('name')
+                gender = doc.get('gender')
+                reg = doc.get('reg')
+            return JSONResponse(content={"message": f"Login successfully", "reg": reg, "name": name, 'gender': gender}, status_code=200)
 
     except Exception as e:
         error_msg = "error" + str(e)

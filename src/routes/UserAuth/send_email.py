@@ -1,11 +1,9 @@
-from fastapi import FastAPI, Form, UploadFile, APIRouter, Depends
+from fastapi import Form, APIRouter
 from fastapi.responses import JSONResponse
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 import smtplib
-import os
-import email.utils
 import secrets
 import string
 
@@ -22,7 +20,7 @@ SMTP_SERVER = "smtp.gmail.com"
 SMTP_USERNAME = "ayushbhandarifor787@gmail.com"
 
 
-@router.post("/send_email")
+@router.post("/send-email")
 async def sendreport(
         name: str = Form(...),
         reg: str = Form(...),
