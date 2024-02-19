@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Excel File</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        form {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        select, input[type="date"]  {
+            width: 80%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        input[type="file"] {
+            display: block;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="submit"] {
+            background-color: #007BFF;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
+        .loading-container {
+            display: none; /* Initially hidden */
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <h1>Add Crush List</h1>
+
+    <form id="myform" action="/add_luv/"  method="POST"  enctype="multipart/form-data">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required><br><br>
+        <label for="reg">Reg No:</label>
+        <input type="text" id="reg" name="reg" required><br><br>
+
+        <label for="gender">Gender:</label>
+        <select name="gender" id="gender" required>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="other">Other</option>
+        </select><br><br>
+
+        <label for="studyYear">Year of Study:</label>
+        <select name="studyYear" id="studyYear" required>
+          <option value="1">1st Year</option>
+          <option value="2">2nd Year</option>
+          <option value="3">3rd Year</option>
+          <option value="4">4th Year</option>
+          <option value="5">5th Year (MTech Integrated)</option>
+        </select><br><br>
+
+        <div id="entries-container">
+            <div class="entry">
+                <label for="crushName">Name:</label>
+                <input type="text" id="crushName" name="crushName[]" required>
+                <label for="crushRegNumber">Registration Number:</label>
+                <input type="text" id="crushRegNumber" name="crushRegNumber[]" required>
+                <button type="button" onclick="removeEntry(this)">-</button>
+            </div>
+        <br><br>
+        </div>
+
+        <button type="button" onclick="addEntry()">+</button>
+        <input type="submit" value="Upload">
+    </form>
+    <div class="loading-container">
+        <div class="spinner"></div>
+    </div>
+<script>
+    function addEntry() {
+        const entriesContainer = document.getElementById('entries-container');
+        const newEntry = document.createElement('div');
+        newEntry.classList.add('entry');
+
+        // Create new input fields
+        const nameLabel = document.createElement('label');
+        nameLabel.textContent = 'Name:';
+        newEntry.appendChild(nameLabel);
+
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.name = 'crushName[]';
+        nameInput.required = true;
+        newEntry.appendChild(nameInput);
+
+        const regNumberLabel = document.createElement('label');
+        regNumberLabel.textContent = 'Registration Number:';
+        newEntry.appendChild(regNumberLabel);
+
+        const regNumberInput = document.createElement('input');
+        regNumberInput.type = 'text';
+        regNumberInput.name = 'crushRegNumber[]';
+        regNumberInput.required = true;
+        newEntry.appendChild(regNumberInput);
+
+        // Create remove button
+        const removeButton = document.createElement('button');
+        removeButton.type = 'button';
+        removeButton.textContent = '-';
+        removeButton.addEventListener('click', function () {
+            removeEntry(this);
+        });
+        newEntry.appendChild(removeButton);
+
+        // Append the new entry to the container
+        entriesContainer.appendChild(newEntry);
+
+    }
+
+function removeEntry(button) {
+    const entry = button.parentNode;
+    const entriesContainer = document.getElementById('entries-container');
+
+    // Ensure at least one entry is present before removing
+    if (entriesContainer.children.length > 1) {
+        entriesContainer.removeChild(entry);
+    }
+}
+
+        // Handle form submission
+        form.addEventListener('submit', function (e) {
+            e.preventDefault(); // Prevent the form from submitting normally
+
+            // Show the loading container and hide the form
+            loadingContainer.style.display = 'flex';
+            form.style.display = 'none';
+
+            // Create a FormData object to send form data
+            const formData = new FormData(form);
+             const crushNameInputs = document.querySelectorAll('input[name="crushName[]"]');
+            const crushRegNumberInputs = document.querySelectorAll('input[name="crushRegNumber[]"]');
+            console.log( document.querySelectorAll('input[name="crushName[]"]'));
+            crushNameInputs.forEach(input => {
+                formData.append('crushName[]', input.value);
+            });
+
+            crushRegNumberInputs.forEach(input => {
+                formData.append('crushRegNumber[]', input.value);
+            });
+            console.log("asdjassdasodasoudn");
+           console.log(formData);
+            fetch('/add_luv/', {
+                method: 'POST',
+                body: formData, // Send the entire form data
+            }).then(response => response.text()) // Assuming the server responds with HTML
+                .then(html => {
+                    // Replace the current page content with the new HTML content
+                    document.body.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    // Handle errors here
+                });
+        });
+    </script>
+</body>
+</html>
