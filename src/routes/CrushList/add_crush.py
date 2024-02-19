@@ -8,7 +8,7 @@ from google.cloud.firestore_v1 import FieldFilter
 router = APIRouter()
 
 
-@router.post("/add-luv/")
+@router.post("/add-crush/")
 async def upload_luv(
         request: Request,
         name: str = Form(...),
