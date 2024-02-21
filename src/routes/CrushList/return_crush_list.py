@@ -9,17 +9,15 @@ from pydantic import BaseModel
 router = APIRouter()
 
 
-class DeleteCrush(BaseModel):
+class GetCrushList(BaseModel):
     name: str
     reg: str
     gender: str
-    crushName: str
-    crushRegNumber: str
 
 
-@router.post("/delete-crush/")
-async def delete_crush(
-        request: DeleteCrush = Body(...)
+@router.post("/get-crush-list/")
+async def get_crush_list(
+        request: GetCrushList = Body(...)
 ):
     try:
         if not firebase_admin._apps:
@@ -28,23 +26,21 @@ async def delete_crush(
             firebase_admin.initialize_app(cred)
 
         db = firestore.client()
+
+        # Check if the user with the provided reg number already has a crush list
         user_query = db.collection("luvlist").where(filter=FieldFilter("reg", "==", request.reg.upper())).limit(1)
         user_result = user_query.stream()
+        existing_crush_list_reg = []
+        existing_crush_list_names = []
+        # Assuming there is only one document in the result (for the given reg number)
         for user_doc in user_result:
             user_doc_ref = user_doc.reference
-            existing_crush_list = user_doc.to_dict().get('crushRegNumber', [])
-            if request.crushRegNumber not in existing_crush_list:
-                return HTTPException(status_code=400,
-                                     detail=f"Crush with reg number {request.crushRegNumber} not found in the list")
-            existing_crush_list.remove(request.crushRegNumber)
-            user_doc_ref.update({
-                'crushNames': existing_crush_list,
-                'crushRegNumber': existing_crush_list
-            })
-            return JSONResponse(content={"message": f"Crush Deleted Successfully"},
-                                status_code=200)
-        else:
-            return HTTPException(status_code=400, detail=f"User with reg number {request.reg} not found in the database")
+            existing_crush_list_reg.append(user_doc.to_dict().get('crushRegNumber', []))
+            existing_crush_list_names.append(user_doc.to_dict().get('crushNames', []))
+
+        return JSONResponse(content={"message": f"Fetched Crush List", "crushlistregno": existing_crush_list_reg,
+                                     "crushlistnames": existing_crush_list_names},
+                            status_code=200)
 
     except Exception as e:
         error_msg = "error" + str(e)

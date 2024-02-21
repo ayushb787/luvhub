@@ -9,7 +9,7 @@ router = APIRouter()
 
 
 @router.post("/add-crush/")
-async def upload_luv(
+async def add_crush(
         request: Request,
         name: str = Form(...),
         reg: str = Form(...),

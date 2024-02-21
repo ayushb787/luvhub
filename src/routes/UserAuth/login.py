@@ -1,29 +1,34 @@
-from fastapi import Form, Request, HTTPException, APIRouter
+from fastapi import Body, Form, Request, HTTPException, APIRouter
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 from google.cloud.firestore_v1 import FieldFilter
+from pydantic import BaseModel
 
 router = APIRouter()
 
 
+class LoginRequest(BaseModel):
+    reg: str
+    password: str
+
+
 @router.post("/login/")
 async def login(
-        request: Request,
-        reg: str = Form(...),
-        password: str = Form(...)
+        request: LoginRequest = Body(...)
 ):
     try:
+        print(request.reg.upper())
         if not firebase_admin._apps:
             load_dotenv()
             cred = credentials.Certificate("static/credentials.json")
             firebase_admin.initialize_app(cred)
         db = firestore.client()
-        print(reg)
+        print(request.reg)
         # Query the database for the user with the specified registration number
-        user_query = db.collection("users").where(filter=FieldFilter("reg", "==", reg.upper())).limit(1)
+        user_query = db.collection("users").where(filter=FieldFilter("reg", "==", request.reg.upper())).limit(1)
         user_result = user_query.get()
 
         if not user_result:
@@ -32,7 +37,7 @@ async def login(
         user_data = user_result[0].to_dict()
 
         # Check if the password matches
-        if user_data.get("password") != password:
+        if user_data.get("password") != request.password:
             return JSONResponse(content={"message": "Incorrect password"}, status_code=401)
 
         # # Check the status
@@ -41,7 +46,7 @@ async def login(
         #     firebase_admin.delete_app(firebase_admin.get_app())
         #     return JSONResponse(content={"message": "Not Verified"}, status_code=401)
         else:
-            user_query = db.collection("users").where(filter=FieldFilter("reg", "==", reg.upper())).limit(1)
+            user_query = db.collection("users").where(filter=FieldFilter("reg", "==", request.reg.upper())).limit(1)
             user_result = user_query.get()
             name = ''
             gender = ''
@@ -51,7 +56,8 @@ async def login(
                 name = doc.get('name')
                 gender = doc.get('gender')
                 reg = doc.get('reg')
-            return JSONResponse(content={"message": f"Login successfully", "reg": reg, "name": name, 'gender': gender}, status_code=200)
+            return JSONResponse(content={"message": f"Login successfully", "reg": reg, "name": name, 'gender': gender},
+                                status_code=200)
 
     except Exception as e:
         error_msg = "error" + str(e)

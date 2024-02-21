@@ -1,19 +1,23 @@
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
-from fastapi import APIRouter, Form, Request, HTTPException
+from fastapi import APIRouter, Body, Request, HTTPException
 import firebase_admin
 from firebase_admin import credentials, firestore
 from google.cloud.firestore_v1 import FieldFilter
+from pydantic import BaseModel
 
 router = APIRouter()
 
 
+class FindMatch(BaseModel):
+    name: str
+    reg: str
+    gender: str
+
+
 @router.post("/find-match/")
 async def find_match(
-        request: Request,
-        name: str = Form(...),
-        reg: str = Form(...),
-        gender: str = Form(...)
+        request: FindMatch = Body(...)
 ):
     try:
         if not firebase_admin._apps:
@@ -23,21 +27,18 @@ async def find_match(
 
         db = firestore.client()
 
-        user_query = db.collection("luvlist").where(filter=FieldFilter("reg", "==", reg.upper())).limit(1)
+        user_query = db.collection("luvlist").where(filter=FieldFilter("reg", "==", request.reg.upper())).limit(1)
         user_result = user_query.stream()
-
+        matched_users = []
         for user_doc in user_result:
             existing_crush_list = user_doc.to_dict().get('crushRegNumber', [])
-
-            matched_users = []
-
             for crush_reg in existing_crush_list:
                 crush_query = db.collection("luvlist").where(filter=FieldFilter("reg", "==", crush_reg)).limit(1)
                 crush_result = crush_query.stream()
                 for crush_doc in crush_result:
                     crush_name = crush_doc.to_dict().get('name', '')
                     crush_crush_list = crush_doc.to_dict().get('crushRegNumber', [])
-                    if reg in crush_crush_list:
+                    if request.reg in crush_crush_list:
                         matched_users.append({
                             "crush_name": crush_name,
                             "crush_reg": crush_reg

@@ -1,22 +1,25 @@
-from fastapi import Form, Request, HTTPException, APIRouter
+from fastapi import Form, Body, HTTPException, APIRouter
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 import firebase_admin
 from firebase_admin import credentials, firestore
 from google.cloud.firestore_v1 import FieldFilter
+from pydantic import BaseModel
 
 router = APIRouter()
 
 
+class SignupRequest(BaseModel):
+    name: str
+    reg: str
+    gender: str
+    mail: str
+    password: str
+
+
 @router.post("/add-user/")
 async def add_user(
-        request: Request,
-        name: str = Form(...),
-        reg: str = Form(...),
-        gender: str = Form(...),
-        mail: str = Form(...),
-        age: int = Form(...),
-        password: str = Form(...)
+        request: SignupRequest = Body(...)
 ):
     try:
         if not firebase_admin._apps:
@@ -24,17 +27,18 @@ async def add_user(
             cred = credentials.Certificate("static/credentials.json")
             firebase_admin.initialize_app(cred)
         db = firestore.client()
-        print(name, reg, gender, age, mail)
+        print(request.name, request.reg, request.gender, request.mail)
 
         # Check if a user with the same registration number already exists
-        query = db.collection("users").where(filter=FieldFilter("reg", "==", reg.upper()))
+        query = db.collection("users").where(filter=FieldFilter("reg", "==", request.reg.upper()))
         existing_user = query.get()
 
         if existing_user:
             return JSONResponse(content={"message": "User with similar registration number already exists"},
                                 status_code=409)
-        luv_dict = {'name': name.upper(), 'reg': reg.upper(), 'gender': gender.upper(), 'age': age, 'mail': mail,
-                    'password': password,
+        luv_dict = {'name': request.name.upper(), 'reg': request.reg.upper(), 'gender': request.gender.upper(),
+                    'mail': request.mail,
+                    'password': request.password,
                     'status': '0'}
         db.collection("users").add(luv_dict)
 
