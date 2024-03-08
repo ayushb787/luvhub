@@ -1,23 +1,27 @@
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
-from fastapi import APIRouter, Form, Request, HTTPException
+from fastapi import APIRouter, Body, Request, HTTPException
 import firebase_admin
 from firebase_admin import credentials, firestore
 from google.cloud.firestore_v1 import FieldFilter
+from pydantic import BaseModel
 
 router = APIRouter()
 
+class AddCrush(BaseModel):
+    name: str
+    reg: str
+    gender: str
+    crushName: list[str]
+    crushRegNumber: list[str]
 
 @router.post("/add-crush/")
 async def add_crush(
-        request: Request,
-        name: str = Form(...),
-        reg: str = Form(...),
-        gender: str = Form(...),
-        crushName: list[str] = Form(...),
-        crushRegNumber: list[str] = Form(...)
+        request: AddCrush = Body(...)
 ):
     try:
+        crushRegNumber = [string.upper() for string in request.crushRegNumber]
+        crushName = [string.upper() for string in request.crushName]
         if not firebase_admin._apps:
             load_dotenv()
             cred = credentials.Certificate("static/credentials.json")
@@ -26,7 +30,7 @@ async def add_crush(
         db = firestore.client()
 
         # Check if the user with the provided reg number already has a crush list
-        user_query = db.collection("luvlist").where(filter=FieldFilter("reg", "==", reg.upper())).limit(1)
+        user_query = db.collection("luvlist").where(filter=FieldFilter("reg", "==", request.reg.upper())).limit(1)
         user_result = user_query.stream()
 
         # Assuming there is only one document in the result (for the given reg number)
@@ -47,7 +51,7 @@ async def add_crush(
 
         else:
             # If the user does not exist in the database, create a new entry
-            luv_dict = {'name': name, 'reg': reg, 'gender': gender, 'crushNames': crushName,
+            luv_dict = {'name': request.name.upper(), 'reg': request.reg.upper(), 'gender': request.gender.upper(), 'crushNames': crushName,
                         'crushRegNumber': crushRegNumber}
             db.collection("luvlist").add(luv_dict)
 

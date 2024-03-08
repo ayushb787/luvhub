@@ -34,7 +34,7 @@ async def add_user(
         existing_user = query.get()
 
         if existing_user:
-            return JSONResponse(content={"message": "User with similar registration number already exists"},
+            return JSONResponse(content={"message": "User with similar registration number already exists."},
                                 status_code=409)
         luv_dict = {'name': request.name.upper(), 'reg': request.reg.upper(), 'gender': request.gender.upper(),
                     'mail': request.mail,
