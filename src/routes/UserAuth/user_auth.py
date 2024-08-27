@@ -15,6 +15,7 @@ class SignupRequest(BaseModel):
     gender: str
     mail: str
     password: str
+    otp: str
 
 
 @router.post("/add-user/")
@@ -32,17 +33,27 @@ async def add_user(
         # Check if a user with the same registration number already exists
         query = db.collection("users").where(filter=FieldFilter("reg", "==", request.reg.upper()))
         existing_user = query.get()
-
         if existing_user:
             return JSONResponse(content={"message": "User with similar registration number already exists."},
                                 status_code=409)
-        luv_dict = {'name': request.name.upper(), 'reg': request.reg.upper(), 'gender': request.gender.upper(),
-                    'mail': request.mail,
-                    'password': request.password,
-                    'status': '0'}
-        db.collection("users").add(luv_dict)
 
-        return JSONResponse(content={"message": "Done"}, status_code=200)
+        query_otp = db.collection("otp").where(filter=FieldFilter("reg", "==", request.reg.upper())).where(filter=FieldFilter("otp", "==", request.otp))
+        existing_user_otp = query_otp.get()
+        if not existing_user_otp:
+            print("Invalid OTP")
+            return JSONResponse(content={"message": "Invalid OTP."},
+                                status_code=409)
+        else:
+            luv_dict = {
+                'name': request.name.upper(),
+                'reg': request.reg.upper(),
+                'gender': request.gender.upper(),
+                'mail': request.mail,
+                'password': request.password
+            }
+            db.collection("users").add(luv_dict)
+            print("User added successfully")
+            return JSONResponse(content={"message": "User added successfully"}, status_code=200)
     except Exception as e:
         error_msg = "error" + str(e)
         print(error_msg)
